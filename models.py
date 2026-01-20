@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Text, DateTime, Boolean,Numeric
+from sqlalchemy import Column, Integer, String, ForeignKey, Text, Boolean, Numeric, DateTime, func
 from database import Base
 
 class User(Base):
@@ -21,7 +21,8 @@ class User(Base):
     wink_score = Column(Integer)
     avg_rating = Column(Numeric(3, 2))
     avg_credibility_score = Column(Integer)
-    created_at = Column(DateTime)
+    # Fixed: Matches your DB screenshot and auto-generates time
+    created_at = Column(DateTime, server_default=func.now())
 
 class Reviews(Base):
     __tablename__ = "reviews"
@@ -37,4 +38,3 @@ class UserReview(Base):
     userreview_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     review_id = Column(Integer, ForeignKey("reviews.review_id"))
-
