@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator, field_validator
 from typing import Optional, Literal
 from datetime import datetime
 
@@ -22,6 +22,29 @@ class UserBase(BaseModel):
     avg_rating: float # Numeric(3,2) needs float
     avg_credibility_score: int
 
+    @field_validator('wink_score')
+    @classmethod
+    def validate_wink_score(cls, v: int):
+        if not (50 <= v <= 80):
+            raise ValueError("wink score should be between 50 and 80.")
+        return v
+
+    # Custom Validator for Avg Rating Message
+    @field_validator('avg_rating')
+    @classmethod
+    def validate_avg_rating(cls, v: float):
+        if not (3.0 <= v <= 4.0):
+            raise ValueError("average rating should be either 3.00 or 4.00.")
+        return v
+
+    # Custom Validator for Credibility Score (Strict 3 or 4)
+    @field_validator('avg_credibility_score')
+    @classmethod
+    def validate_credibility(cls, v: int):
+        if v not in [3, 4]:
+            raise ValueError("average credibility score can only be 3 or 4.")
+        return v
+
     @model_validator(mode="after")
     def validate_user_rules(self):
         if self.profile_type == "freelancer" and (self.instagram_profile or self.tiktok_profile):
@@ -44,11 +67,36 @@ class UserResponse(UserBase):
 
 # --- REVIEWS SCHEMAS ---
 class ReviewsBase(BaseModel):
-    reviewer_rating: int = Field(..., ge=4, le=5)
-    reviewer_comment: str
-    response_reviewer_comment: Optional[str] = None
-    summary: Optional[str] = None
+    reviewer_rating: int = Field(..., description="Rating must be 4 or 5")
+    
+    # We still keep the Field constraints for extra security
+    reviewer_comment: str = Field(..., max_length=1500)
+    response_reviewer_comment: Optional[str] = Field(None)
+    summary: Optional[str] = Field(None)
     time_posted: str = Field(..., max_length=50)
+
+    # Custom Message for Reviewer Comment
+    # @field_validator('reviewer_comment')
+    # @classmethod
+    # def validate_reviewer_comment(cls, v: str):
+    #     if not (250 <= len(v) <= 1500):
+    #         raise ValueError("reviewer comment should be between 250 and 300 characters.")
+    #     return v
+
+    # # Custom Message for Response Comment
+    # @field_validator('response_reviewer_comment')
+    # @classmethod
+    # def validate_response_comment(cls, v: Optional[str]):
+    #     if v and not (250 <= len(v) <= 1500):
+    #         raise ValueError("response reviewer comment should be between 250 and 300 characters.")
+    #     return v
+
+    # @field_validator('reviewer_rating')
+    # @classmethod
+    # def validate_rating(cls, v: int):
+    #     if v not in [4, 5]:
+    #         raise ValueError("reviewer rating should be either 4 or 5.")
+    #     return v
 
 class ReviewsCreate(ReviewsBase):
     pass
