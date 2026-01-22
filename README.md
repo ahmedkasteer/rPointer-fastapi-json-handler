@@ -5,6 +5,7 @@ This Project consists of three main files:
 * main.py
 * database.py
 * models.py
+* chemas.py
 
 ***DEPENDENCIES***
 
@@ -32,11 +33,17 @@ To run this project on a LOCAL HOST SERVER run for main.py file in developer mod
 * For reviews table on your local machine visit: http://127.0.0.1:8000/reviews
 * For userReview table on your local machine visit: http://127.0.0.1:8000/user-review
 * For POST data, use http://127.0.0.1:8000/docs to enter data using swagger.ui and then verify by refreshing tables in PgAdmin4
+* 
+* /user-reviews/
+* http://127.0.0.1:8000/users/ for POST DATA -> USERS 
+* http://127.0.0.1:8000/reviews/ for POST DATA -> REVIEWS
+* http://127.0.0.1:8000/user-reviews for GET DATA -> USER REVIEWS
 
 To run this project: 
 --> Terminal Command: uv run fastapi dev main.py 
 
 ----------------------------------------------- THANKYOU! ----------------------------------------------- 
+
 
 
 
