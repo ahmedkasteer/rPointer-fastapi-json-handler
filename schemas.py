@@ -107,11 +107,16 @@ class ReviewsResponse(ReviewsBase):
         from_attributes = True
 
 # --- USER-REVIEW SCHEMAS ---
-class UserReviewCreate(BaseModel):
-    user_id: int
+class UserReviewBase(BaseModel):
+    subject_id: int   
+    reviewer_id: int  
     review_id: int
 
-class UserReviewResponse(UserReviewCreate):
-    userreview_id: int
+class UserReviewCreate(UserReviewBase):
+    pass  # Used for POST requests
+
+class UserReviewResponse(UserReviewBase):
+    userreview_id: int  # The primary key from your DB model
+
     class Config:
-        from_attributes = True
+        from_attributes = True # Allows Pydantic to read SQLAlchemy models

@@ -14,50 +14,51 @@ app = FastAPI()
 def read_users(db: Session = Depends(get_db)):
     return db.query(models.User).all()
 
+from sqlalchemy import func # Add this to your imports at the top
+
 @app.post("/users/", response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-   # --- 1. PRE-CHECKS FOR UNIQUENESS ---
-    
-    # Check Email
+    # --- 1. PRE-CHECKS FOR UNIQUENESS (Keep your existing checks here) ---
     if db.query(models.User).filter(models.User.email == user.email).first():
-        raise HTTPException(status_code=400, detail="Email already registered and exists in our database .")
-
-    # Check Personal Website
-    if user.personal_website and db.query(models.User).filter(models.User.personal_website == user.personal_website).first():
-        raise HTTPException(status_code=400, detail="This personal website URL already exists.")
-
-    # Check Instagram
-    if user.instagram_profile and db.query(models.User).filter(models.User.instagram_profile == user.instagram_profile).first():
-        raise HTTPException(status_code=400, detail="This Instagram profile is already linked to an account.")
-
-    # Check TikTok
-    if user.tiktok_profile and db.query(models.User).filter(models.User.tiktok_profile == user.tiktok_profile).first():
-        raise HTTPException(status_code=400, detail="This TikTok profile is already linked to an account.")
-
-    # Check Upwork
-    if user.upwork_profile and db.query(models.User).filter(models.User.upwork_profile == user.upwork_profile).first():
-        raise HTTPException(status_code=400, detail="This Upwork profile is already linked to an account.")
-
-    # Check Fiverr
-    if user.fiverr_profile and db.query(models.User).filter(models.User.fiverr_profile == user.fiverr_profile).first():
-        raise HTTPException(status_code=400, detail="This Fiverr profile is already linked to an account.")
+        raise HTTPException(status_code=400, detail="Email already registered.")
+    
+    # ... (Keep all your other uniqueness checks for Instagram, TikTok, etc.)
 
     # --- 2. DATABASE PERSISTENCE ---
-    
     db_user = models.User(**user.model_dump())
     db.add(db_user)
 
     try:
         db.commit()
         db.refresh(db_user)
+
+        # --- 3. AUTOMATIC REVIEW ASSIGNMENT (NEW LOGIC) ---
+        # Get 5 random reviews from the reviews table
+        random_reviews = db.query(models.Reviews).order_by(func.random()).limit(5).all()
+
+        # Get 5 random users to act as "Reviewers" (excluding the new user themselves)
+        random_reviewers = db.query(models.User).filter(models.User.id != db_user.id).order_by(func.random()).limit(5).all()
+
+        # Check if we have enough data to perform the assignment
+        if len(random_reviewers) >= 5 and len(random_reviews) >= 5:
+            for i in range(5):
+                new_junction_entry = models.UserReview(
+                    subject_id=db_user.id,           # The new user (David)
+                    reviewer_id=random_reviewers[i].id, # A random "author"
+                    review_id=random_reviews[i].review_id # The review content
+                )
+                db.add(new_junction_entry)
+            
+            db.commit() # Save the 5 new review links
+
         return db_user
+
     except IntegrityError:
-        # Final safety net in case of simultaneous requests
         db.rollback()
         raise HTTPException(
             status_code=400,
-            detail="A database integrity error occurred. One of your unique fields might already exist."
-        )
+            detail="A database integrity error occurred."
+        )  
 
 # --- REVIEWS ---
 @app.get("/reviews/", response_model=List[schemas.ReviewsResponse])
@@ -98,9 +99,11 @@ def create_review_and_assign_randomly(review: schemas.ReviewsCreate, db: Session
 
 # --- USER-REVIEWS ---
 @app.get("/user-reviews/", response_model=List[schemas.UserReviewResponse])
-def get_user_reviews(db: Session = Depends(get_db)):
-    return db.query(models.UserReview).all()
-
+def get_user_reviews(
+    db: Session = Depends(get_db)
+):
+    reviews = db.query(models.UserReview).all()
+    return reviews
 
 # @app.post("/user-reviews/", response_model=schemas.UserReviewResponse)
 # def link_review(link: schemas.UserReviewCreate, db: Session = Depends(get_db)):
@@ -109,3 +112,42 @@ def get_user_reviews(db: Session = Depends(get_db)):
 #     db.commit()
 #     db.refresh(db_link)
 #     return db_link
+
+#@app.put() for updation 
+#@app.delete for deletion 
+#remember to use db.commit <------------
+
+#bcrypt for password hashing 
+#pip install bcrypt 
+#pip install passlib
+
+
+"""
+DOCUMENT!!!! IGNORE this is for DEVELOPER!!!
+
+
+from passlib import CryptContext 
+pwd_cxt = CryptContext(schema = ["bcrypt], deprecated = 'auto')
+hashedPassword = pwd_cxt.hash(request.password)
+new_user = models.User(name=request.name, email=request.email, password = hashed.password)
+class Hash():
+    def bcrypt(password: str)
+    return pwd.cxt.hash(request.password)
+import from Hash ---- 
+
+
+use routers to manage large files to prevent main from getting messy. 
+routers help users to create and manage large files. 
+instead of simply using app instance of making the endpoints for get post put delete
+we can simply create an instance router = APIRouter()
+and then we can use it to manage large files. 
+we then replace for e.g @app.get with @router.get 
+this will help modify the methods and make them more manageable for you. 
+
+
+using prefix allows us to not type the specific endpoints again and again
+router = APIRouter()
+prefix=("/blog",
+tags=['Blogs']
+)
+"""

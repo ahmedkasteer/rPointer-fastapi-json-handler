@@ -33,8 +33,10 @@ class Reviews(Base):
     summary = Column(Text)
     time_posted = Column(String(50))
 
+
 class UserReview(Base):
     __tablename__ = "userreview"
     userreview_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    subject_id = Column(Integer, ForeignKey("users.id")) # The person getting reviewed
+    reviewer_id = Column(Integer, ForeignKey("users.id")) # The person writing the review
     review_id = Column(Integer, ForeignKey("reviews.review_id"))
